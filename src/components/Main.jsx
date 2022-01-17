@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Route, Switch, Redirect } from 'react-router-native';
+import { Route, Routes, Navigate } from 'react-router-native';
 import RepositoryList from './RepositoryList';
 import SignIn from './SignIn';
 import AppBar from './AppBar';
@@ -18,15 +18,11 @@ const Main = () => {
   return (
     <View style={styles.container}>
       <AppBar />
-      <Switch>
-        <Route path='/' exact>
-          <RepositoryList />
-        </Route>
-        <Route path='/signin' exact>
-          <SignIn />
-        </Route>
-        <Redirect to='/' />
-      </Switch>
+      <Routes>
+        <Route path='/' element={<RepositoryList />} />
+        <Route path='/signin' element={<SignIn />} />
+        <Route path='*' element={<Navigate to='/' replace />} />
+      </Routes>
     </View>
   );
 };
