@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Image } from 'react-native';
+import { View, StyleSheet, Image, Pressable } from 'react-native';
 import theme from '../theme';
 import Text from './Text';
 
@@ -72,7 +72,7 @@ const checkBigNumber = (number) =>
 
 const RepositoryItem = ({ item }) => {
   return (
-    <View style={styles.container}>
+    <View testID='repositoryItem' style={styles.container}>
       <View style={styles.headings}>
         <Image style={styles.tinyLogo} source={{ uri: item.ownerAvatarUrl }} />
         <View style={styles.intro}>

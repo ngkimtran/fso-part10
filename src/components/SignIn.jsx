@@ -52,12 +52,9 @@ const SignInForm = ({ onSubmit }) => {
   );
 };
 
-const SignIn = () => {
-  const [signIn] = useSignIn();
-
+export const SignInContainer = ({ signIn }) => {
   const onSubmit = async (values) => {
     const { username, password } = values;
-
     try {
       await signIn({ username, password });
     } catch (e) {
@@ -74,6 +71,12 @@ const SignIn = () => {
       {({ handleSubmit }) => <SignInForm onSubmit={handleSubmit} />}
     </Formik>
   );
+};
+
+const SignIn = () => {
+  const [signIn] = useSignIn();
+
+  return <SignInContainer signIn={signIn} />;
 };
 
 export default SignIn;
