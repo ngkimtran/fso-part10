@@ -113,7 +113,7 @@ const ReviewItem = ({ review }) => {
             {review.user.username}
           </Text>
           <Text style={styles.date} color='textSecondary'>
-            {format(new Date(review.createdAt), 'dd.mm.yyyy')}
+            {format(new Date(review.createdAt), 'dd.MM.yyyy')}
           </Text>
           <Text style={styles.description}>{review.text}</Text>
         </View>
