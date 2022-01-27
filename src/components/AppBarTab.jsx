@@ -10,6 +10,7 @@ const styles = StyleSheet.create({
     fontWeight: theme.fontWeights.bold,
     fontSize: theme.fontSizes.body,
     marginLeft: 12,
+    marginRight: 20,
   },
 });
 

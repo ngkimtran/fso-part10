@@ -14,7 +14,7 @@ const styles = StyleSheet.create({
   },
   search: {
     marginHorizontal: 12,
-    marginVertical: 20,
+    marginTop: 20,
   },
 });
 
@@ -58,7 +58,7 @@ export class RepositoryListContainer extends React.Component {
   };
 
   render() {
-    const { navigate, repositories } = this.props;
+    const { navigate, repositories, onEndReach } = this.props;
 
     const repositoryNodes = repositories
       ? repositories.edges.map((edge) => edge.node)
@@ -78,6 +78,8 @@ export class RepositoryListContainer extends React.Component {
             <RepositoryItem item={item} />
           </Pressable>
         )}
+        onEndReached={onEndReach}
+        onEndReachedThreshold={0.5}
       />
     );
   }
@@ -106,7 +108,15 @@ const RepositoryList = () => {
   const [searchQuery, setsearchQuery] = useState('');
   const [searchKeyword] = useDebounce(searchQuery, 500);
   const navigate = useNavigate();
-  const { repositories } = useRepositories({ ...picker[order], searchKeyword });
+  const { repositories, fetchMore } = useRepositories({
+    ...picker[order],
+    searchKeyword,
+    first: 6,
+  });
+
+  const onEndReach = () => {
+    fetchMore();
+  };
 
   return (
     <RepositoryListContainer
@@ -116,6 +126,7 @@ const RepositoryList = () => {
       setOrder={setOrder}
       searchQuery={searchQuery}
       setsearchQuery={setsearchQuery}
+      onEndReach={onEndReach}
     />
   );
 };

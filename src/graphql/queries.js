@@ -5,12 +5,17 @@ export const GET_REPOSITORIES = gql`
     $orderBy: AllRepositoriesOrderBy
     $orderDirection: OrderDirection
     $searchKeyword: String
+    $first: Int
+    $after: String
   ) {
     repositories(
       orderDirection: $orderDirection
       orderBy: $orderBy
       searchKeyword: $searchKeyword
+      first: $first
+      after: $after
     ) {
+      totalCount
       edges {
         node {
           id
@@ -23,22 +28,49 @@ export const GET_REPOSITORIES = gql`
           language
           ownerAvatarUrl
         }
+        cursor
+      }
+      pageInfo {
+        endCursor
+        startCursor
+        hasNextPage
       }
     }
   }
 `;
 
 export const GET_USER = gql`
-  {
+  query getUser($first: Int, $after: String, $includeReviews: Boolean = false) {
     me {
       id
       username
+      reviews(first: $first, after: $after) @include(if: $includeReviews) {
+        totalCount
+        edges {
+          node {
+            id
+            text
+            rating
+            createdAt
+            repository {
+              id
+              fullName
+            }
+          }
+          cursor
+        }
+        pageInfo {
+          hasNextPage
+          startCursor
+          endCursor
+        }
+      }
     }
   }
 `;
 
 export const GET_REPOSITORY = gql`
-  query Repository($repositoryId: ID!) {
+  query Repository($repositoryId: ID!, $first: Int, $after: String) {
     repository(id: $repositoryId) {
       id
       fullName
@@ -50,16 +82,8 @@ export const GET_REPOSITORY = gql`
       ownerAvatarUrl
       description
       language
-    }
-  }
-`;
-
-export const GET_REVIEWS = gql`
-  query Reviews($repositoryId: ID!) {
-    repository(id: $repositoryId) {
-      id
-      fullName
-      reviews {
+      reviews(first: $first, after: $after) {
+        totalCount
         edges {
           node {
             id
@@ -71,6 +95,12 @@ export const GET_REVIEWS = gql`
               username
             }
           }
+          cursor
+        }
+        pageInfo {
+          hasNextPage
+          startCursor
+          endCursor
         }
       }
     }

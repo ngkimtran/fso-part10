@@ -31,7 +31,7 @@ const styles = StyleSheet.create({
 const initialValues = {
   ownerName: '',
   repositoryName: '',
-  rating: 0,
+  rating: '',
   text: '',
 };
 

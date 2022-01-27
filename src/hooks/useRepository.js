@@ -1,8 +1,8 @@
 import { useLazyQuery } from '@apollo/client';
 import { GET_REPOSITORY } from '../graphql/queries';
 
-const useRepository = () => {
-  const [query, result] = useLazyQuery(
+const useRepository = (variables) => {
+  const [query, { data, loading, fetchMore, ...result }] = useLazyQuery(
     GET_REPOSITORY,
     {
       fetchPolicy: 'cache-and-network',
@@ -14,12 +14,35 @@ const useRepository = () => {
     }
   );
 
-  const getRepository = async ({ repositoryId }) => {
-    const { data } = await query({ variables: { repositoryId } });
-    return { data };
+  const handleFetchMore = () => {
+    const canFetchMore =
+      !loading && data?.repository.reviews.pageInfo.hasNextPage;
+    if (!canFetchMore) {
+      return;
+    }
+    fetchMore({
+      variables: {
+        after: data.repository.reviews.pageInfo.endCursor,
+        ...variables,
+      },
+    });
   };
 
-  return [getRepository, result];
+  const getRepository = async () => {
+    try {
+      await query({ variables });
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  return {
+    repository: data ? data.repository : undefined,
+    getRepository,
+    fetchMore: handleFetchMore,
+    loading,
+    ...result,
+  };
 };
 
 export default useRepository;

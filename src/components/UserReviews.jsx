@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import RepositoryItem from './RepositoryItem';
-import { FlatList, View, StyleSheet, Pressable } from 'react-native';
-import { useParams } from 'react-router-native';
+import { useNavigate } from 'react-router-native';
+import { FlatList, View, StyleSheet, Pressable, Alert } from 'react-native';
 import theme from '../theme';
 import Text from './Text';
-import useRepository from '../hooks/useRepository';
-import * as Linking from 'expo-linking';
+import useUserReviews from '../hooks/useUserReviews';
 import { format } from 'date-fns';
+import { DELETE_REVIEW } from '../graphql/mutations';
+import { useMutation } from '@apollo/client';
 
 const styles = StyleSheet.create({
   container: {
@@ -23,6 +23,17 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 20,
     marginHorizontal: 10,
+    width: '45%',
+    alignItems: 'center',
+  },
+  deleteButton: {
+    backgroundColor: 'red',
+    borderRadius: 3,
+    padding: 10,
+    marginTop: 10,
+    marginBottom: 20,
+    marginHorizontal: 10,
+    width: '45%',
     alignItems: 'center',
   },
   buttonText: {
@@ -74,31 +85,32 @@ const styles = StyleSheet.create({
   repository: {
     marginBottom: 10,
   },
+  buttonContainer: {
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    width: '100%',
+  },
 });
 
 const ItemSeparator = () => <View style={styles.separator} />;
 
-const RepositoryInfo = ({ repository }) => {
-  const repositoryStyles = [styles.container, styles.repository];
-  return (
-    <View style={repositoryStyles}>
-      {repository && (
-        <>
-          <RepositoryItem item={repository} />
-          <Pressable
-            style={styles.button}
-            onPress={() => Linking.openURL(repository.url)}
-          >
-            <Text style={styles.buttonText} fontWeight='bold'>
-              Open in Github
-            </Text>
-          </Pressable>
-        </>
-      )}
-    </View>
-  );
-};
-const ReviewItem = ({ review }) => {
+const ReviewItem = ({ review, navigate, onDelete }) => {
+  const handleDelete = () => {
+    Alert.alert(
+      'Delete review',
+      'Are you sure you want to delete this review?',
+      [
+        {
+          text: 'Cancel',
+          onPress: () => console.log('Cancel Pressed'),
+          style: 'cancel',
+        },
+        { text: 'Delete', onPress: () => onDelete(review.id) },
+      ]
+    );
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.headings}>
@@ -109,7 +121,7 @@ const ReviewItem = ({ review }) => {
         </View>
         <View style={styles.intro}>
           <Text style={styles.name} fontSize='subheading' fontWeight='bold'>
-            {review.user.username}
+            {review.repository.fullName}
           </Text>
           <Text style={styles.date} color='textSecondary'>
             {format(new Date(review.createdAt), 'dd.MM.yyyy')}
@@ -117,32 +129,55 @@ const ReviewItem = ({ review }) => {
           <Text style={styles.description}>{review.text}</Text>
         </View>
       </View>
+      <View style={styles.buttonContainer}>
+        <Pressable
+          style={styles.button}
+          onPress={() =>
+            navigate(`/repositories/${review.repository.id}`, { replace: true })
+          }
+        >
+          <Text style={styles.buttonText} fontWeight='bold'>
+            View repository
+          </Text>
+        </Pressable>
+        <Pressable style={styles.deleteButton} onPress={handleDelete}>
+          <Text style={styles.buttonText} fontWeight='bold'>
+            Delete review
+          </Text>
+        </Pressable>
+      </View>
     </View>
   );
 };
 
-const SingleRepository = () => {
-  const [reviews, setReviews] = useState();
-  const { id } = useParams();
-  const { repository, getRepository, fetchMore } = useRepository({
-    repositoryId: id,
-    first: 3,
+const UserReviews = () => {
+  const [userReviews, setUserReviews] = useState();
+  const navigate = useNavigate();
+  const { user, refetch, fetchMore } = useUserReviews({
+    includeReviews: true,
+    first: 4,
   });
+  const [deleteReview, result] = useMutation(DELETE_REVIEW);
 
   useEffect(() => {
-    const fetchRepository = async () => {
-      await getRepository();
-    };
-    fetchRepository();
-  }, [id]);
+    if (user) setUserReviews(user.reviews);
+  }, [user]);
 
   useEffect(() => {
-    if (repository) {
-      setReviews(repository.reviews);
+    if (result?.data?.deleteReview === true) {
+      refetch();
     }
-  }, [repository]);
+  }, [result.data]);
 
-  const reviewNodes = reviews ? reviews.edges.map((edge) => edge.node) : [];
+  const userReviewsNodes = userReviews
+    ? userReviews.edges.map((edge) => edge.node)
+    : [];
+
+  const onDelete = async (id) => {
+    await deleteReview({
+      variables: { deleteReviewId: id },
+    });
+  };
 
   const onEndReach = () => {
     fetchMore();
@@ -150,15 +185,16 @@ const SingleRepository = () => {
 
   return (
     <FlatList
-      data={reviewNodes}
+      data={userReviewsNodes}
       ItemSeparatorComponent={ItemSeparator}
-      renderItem={({ item }) => <ReviewItem review={item} />}
+      renderItem={({ item }) => (
+        <ReviewItem navigate={navigate} review={item} onDelete={onDelete} />
+      )}
       keyExtractor={({ id }) => id}
-      ListHeaderComponent={() => <RepositoryInfo repository={repository} />}
       onEndReachedThreshold={0.5}
       onEndReached={onEndReach}
     />
   );
 };
 
-export default SingleRepository;
+export default UserReviews;
